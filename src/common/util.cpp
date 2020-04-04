@@ -328,9 +328,25 @@ namespace tools
 
     // Call GetNativeSystemInfo if supported or GetSystemInfo otherwise.
 
+      // GetProcAddress returns a pointer to some function. It can return
+      // pointers to different functions, so it has to return something that is
+      // suitable to store any pointer to function. Microsoft chose FARPROC,
+      // which is int (WINAPI *)() on 32-bit Windows. The user is supposed to
+      // know the signature of the function he requests and perform a cast
+      // (which is a nop on this platform). The result is a pointer to function
+      // with the required signature, which is bitwise equal to what
+      // GetProcAddress returned.
+      // However, gcc >= 8 warns about that.
+#if defined(BOOST_GCC) && BOOST_GCC >= 80000
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
     pGNSI = (PGNSI) GetProcAddress(
       GetModuleHandle(TEXT("kernel32.dll")), 
       "GetNativeSystemInfo");
+#if defined(BOOST_GCC) && BOOST_GCC >= 80000
+#pragma GCC diagnostic pop
+#endif
     if(NULL != pGNSI)
       pGNSI(&si);
     else GetSystemInfo(&si);
@@ -381,9 +397,16 @@ namespace tools
           else StringCchCat(pszOS, BUFSIZE, TEXT("Windows Server 2012 R2 " ));
         }
 
+#if defined(BOOST_GCC) && BOOST_GCC >= 80000
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
         pGPI = (PGPI) GetProcAddress(
           GetModuleHandle(TEXT("kernel32.dll")), 
           "GetProductInfo");
+#if defined(BOOST_GCC) && BOOST_GCC >= 80000
+#pragma GCC diagnostic pop
+#endif
 
         pGPI( osvi.dwMajorVersion, osvi.dwMinorVersion, 0, 0, &dwType);
 
